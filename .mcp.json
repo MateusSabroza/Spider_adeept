@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "spider-robot": {
+      "type": "stdio",
+      "command": "/home/msabroza/Nextcloud/Homelab/Spider/.venv/bin/python",
+      "args": ["/home/msabroza/Nextcloud/Homelab/Spider/spider_mcp.py"]
+    }
+  }
+}
