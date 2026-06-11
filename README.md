@@ -16,7 +16,6 @@ Robô hexápode de 6 pernas com firmware customizado para Arduino e integração
 | WiFi | ESP8266 integrado |
 | LEDs | 6x WS2812 (pino A1) |
 | Sensor | Ultrassônico Trig=A2 / Echo=A3 |
-| Buzzer | Pino digital |
 | Giroscópio | MPU6050 via I2C |
 
 ### Mapa de pinos
