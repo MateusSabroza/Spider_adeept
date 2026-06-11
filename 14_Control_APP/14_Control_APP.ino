@@ -1,7 +1,7 @@
 /**********************************************************************
   Product     : Adeept Hexpod for Arduino
   Base        : WIFI_control (V5.0 official library)
-  Modified    : 2026/05/31 — WiFi Sabroza2, porta 4000, comandos app
+  Modified    : 2026/05/31 — porta 4000, comandos app
 **********************************************************************/
 #include "hexpod.h"
 #include <Adafruit_NeoPixel.h>
@@ -21,7 +21,7 @@ void ESP8266_Setup() {
   Serial.begin(115200);
   Serial.println("AT+CWMODE=3\r\n");
   delay(3000);
-  Serial.println("AT+CWJAP=\"Sabroza2\",\"1113152331A\"\r\n");
+  Serial.println("AT+CWJAP=\"SUA_REDE_WIFI\",\"SUA_SENHA_WIFI\"\r\n");
   delay(5000);
   Serial.println("AT+CWSAP=\"Adeept_ADA033\",\"12345678\",8,2\r\n");
   delay(1000);

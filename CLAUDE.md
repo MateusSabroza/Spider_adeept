@@ -8,8 +8,8 @@ Autorizado a executar git commits, uploads Arduino e edições de código sem pe
 - **Servos**: 13 servos — S0-S11 nas pernas (D2-D13), S12 cabeça (D14)
 - **Switch**: posição 0 = upload/programação, posição 1 = operação normal (ESP8266 ativo)
 - **Porta serial**: `/dev/ttyUSB1` (grupo `uucp` no Arch Linux)
-- **WiFi**: ESP8266 — robô conecta na rede Sabroza2, IP `192.168.15.12`, porta TCP 4000
-- **AP próprio**: `Adeept_ADA033` (senha: `12345678`), IP `192.168.4.1`
+- **WiFi**: ESP8266 — robô conecta na rede local, IP `192.168.x.x`, porta TCP 4000
+- **AP próprio**: `Adeept_ADA033` (senha padrão do kit), IP `192.168.4.1`
 
 ## Componentes presentes / ausentes
 | Componente | Status |
@@ -58,13 +58,13 @@ sudo -E arduino-cli upload --fqbn arduino:avr:uno --port /dev/ttyUSB1 /home/msab
 ## Testar via TCP (switch em 1, aguardar 20s após ligar)
 ```bash
 # Parar o robô
-python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('192.168.15.12',4000)); s.send(b'DTS'); s.close()"
+python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('192.168.x.x',4000)); s.send(b'DTS'); s.close()"
 
 # Andar para frente
-python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('192.168.15.12',4000)); s.send(b'forward'); s.close()"
+python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('192.168.x.x',4000)); s.send(b'forward'); s.close()"
 
 # Testar sensor ultrassônico (LEDs mudam de cor OU robô se move)
-python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('192.168.15.12',4000)); s.send(b'testdist'); s.close()"
+python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('192.168.x.x',4000)); s.send(b'testdist'); s.close()"
 ```
 
 ## GUI de calibração
@@ -89,7 +89,7 @@ python3 /home/msabroza/Nextcloud/Homelab/Spider/servosGUI_linux.py
 
 ## MCP Server
 ```bash
-# spider_mcp.py conecta via TCP em 192.168.15.12:4000
+# spider_mcp.py conecta via TCP em 192.168.x.x:4000
 # Configurado em .mcp.json
 # Ferramentas: mover, cabeca, led, modo_desvio, modo_seguidor, equilibrio, buzzer
 ```

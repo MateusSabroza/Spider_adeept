@@ -80,7 +80,7 @@ Cabeça              → S12(D14)
 ```bash
 # Exemplo: andar para frente via terminal
 python3 -c "import socket; s=socket.socket();
-  s.connect(('192.168.15.12', 4000)); s.send(b'forward')"
+  s.connect(('192.168.x.x', 4000)); s.send(b'forward')"
 ```
 
 > Visual: diagrama simples: celular / computador → WiFi → ESP8266 → Arduino → servos

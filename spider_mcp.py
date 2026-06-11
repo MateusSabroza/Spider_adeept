@@ -2,7 +2,7 @@
 import socket
 from mcp.server.fastmcp import FastMCP
 
-ROBOT_HOST = "192.168.15.12"
+ROBOT_HOST = "192.168.x.x"  # substitua pelo IP do robô na sua rede
 ROBOT_PORT = 4000
 
 mcp = FastMCP("Spider Robot")
