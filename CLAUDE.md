@@ -16,17 +16,17 @@ Autorizado a executar git commits, uploads Arduino e edições de código sem pe
 |---|---|
 | 13 servos D2-D14 | ✅ Funcionando e calibrados |
 | OLED display | ❌ Não presente — removido do firmware |
-| WS2812 LEDs (5x, pino A3) | ⚠️ Não conectado ou não montado |
-| Sensor ultrassônico I2C 0x57 | ⚠️ Status desconhecido |
-| MPU6050 (giroscópio) I2C | ⚠️ Status desconhecido |
-| Buzzer (pino A2) | ⚠️ Status desconhecido |
+| WS2812 LEDs (6x, pino A1) | ✅ Funcionando |
+| Sensor ultrassônico GPIO Trig=A2/Echo=A3 | ⚠️ Não testado |
+| MPU6050 (giroscópio) I2C | ⚠️ Não testado |
+| Buzzer | ⚠️ Não testado |
 
 ## Mapa de pinos (CORRIGIDO)
 ```
 S0=D2, S1=D3, S2=D4, S3=D5, S4=D6, S5=D7
 S6=D8, S7=D9, S8=D10, S9=D11, S10=D12, S11=D13
 S12=D14 (cabeça)
-Buzzer=A2, WS2812=A3, Bateria=A7
+WS2812=A1, Ultrassônico Trig=A2/Echo=A3, Bateria=A7
 ```
 
 ## Mapa das pernas
@@ -75,12 +75,17 @@ python3 /home/msabroza/Nextcloud/Homelab/Spider/servosGUI_linux.py
 # Clicar SET salva em 14_Control_APP/angle.h
 ```
 
+## Firmware atual (14_Control_APP)
+- Base: hexpod.h/hexpod.cpp da biblioteca oficial V5.0
+- Movimentos via `QUANRUPED q` (moveforward/movebackward/turnleft/turnright/advoid/steaty)
+- LEDs controlados via `extern Adafruit_NeoPixel strip` (objeto do hexpod.cpp)
+- Comandos compatíveis com app Adeept: forward/backward/left/right/DTS/automatic/steady/lightMode
+- Arquivos antigos movidos para `14_Control_APP/_backup_old_firmware/`
+
 ## Problemas conhecidos / pendentes
-1. **Sensor ultrassônico**: verificar se está conectado na porta Ultrasonic da placa
-2. **WS2812 LEDs**: não respondem a comandos — verificar conexão física
-3. **ANGLE6=3** (Dianteira Direita hip): valor muito baixo, quase no limite mecânico
-4. **Obstacle avoidance**: não funciona sem sensor ultrassônico conectado
-5. **MPU6050**: não testado — necessário para modo de equilíbrio automático
+1. **Sensor ultrassônico**: não testado — conectar em Trig=A2/Echo=A3
+2. **ANGLE6=3** (Dianteira Direita hip): valor próximo do limite mecânico (intencional)
+3. **MPU6050**: não testado — necessário para modo `steady` (equilíbrio)
 
 ## MCP Server
 ```bash
@@ -92,7 +97,8 @@ python3 /home/msabroza/Nextcloud/Homelab/Spider/servosGUI_linux.py
 ## Arquivos importantes
 - `14_Control_APP/14_Control_APP.ino` — firmware principal
 - `14_Control_APP/angle.h` — ângulos de calibração dos servos
-- `14_Control_APP/servo_move.h` — definição dos pinos dos servos
+- `14_Control_APP/hexpod.h` / `hexpod.cpp` — biblioteca de movimento e LEDs
+- `14_Control_APP/_backup_old_firmware/` — arquivos do firmware anterior
 - `Adjustment_Servos/Adjustment_Servos.ino` — sketch de calibração
 - `servosGUI_linux.py` — GUI de calibração (Linux)
 - `spider_mcp.py` — MCP server para controle via Claude

@@ -6,7 +6,7 @@
 
 // //////////////////////Buzzer drive area///////////////////////////////
 //Buzzer pin definition             
-#define PIN_BUZZER A2                   //Define the pins for the Arduino control buzzer
+#define PIN_BUZZER A0                   //Define the pins for the Arduino control buzzer
 #define BUZZER_CHN 0                    //Define the PWM channel for Arduino
 #define BUZZER_FREQUENCY 2000           //Define the resonant frequency of the buzzer 
 #define G4 392
@@ -26,7 +26,7 @@ void Buzzer_PlaySong();
 
 /////////////////////WS2812 LED area///////////////////////////////////
 #define LED_PIN    A3         // WS2812 connect to pin A3 .
-#define LED_COUNT   5         // LED number.
+#define LED_COUNT   7         // LED number.
 void WS2812_Setup();
 void WS2812_Brightness(int Brightness);
 void WS2812Color(int num, int R, int G, int B);
@@ -37,7 +37,6 @@ void runningLightEffect(int r, int g, int b);
 void alarmEffect(int r, int g, int b);
 
 /////////////////////ultrasonic area///////////////////////////////////
-#define HCSR04_I2C_ADDR 0x57
 void Ultrasonic_Setup();
 uint32_t getDistance();
 

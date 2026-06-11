@@ -217,34 +217,25 @@ void alarmEffect(int r, int g, int b)
 }
 
 /////////////////////ultrasonic area///////////////////////////////////
-void Ultrasonic_Setup() 
+#define TRIG_PIN A2
+#define ECHO_PIN A3
+
+void Ultrasonic_Setup()
 {
-  Wire.begin();         // Initialize I2C communication
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
 }
 
-uint32_t getDistance() 
+uint32_t getDistance()
 {
-  Wire.beginTransmission(HCSR04_I2C_ADDR);
-  Wire.write(0x01); // Usually write 0x01 command to start
-  byte error = Wire.endTransmission();
-  
-  if (error != 0) {
-    Wire.beginTransmission(HCSR04_I2C_ADDR);
-    Wire.write(0x01); // Usually write 0x01 command to start
-    byte error = Wire.endTransmission();
-  }
-  delay(50);  //Wait for the measurement to complete (the module needs time to measure)
-
-  Wire.requestFrom(HCSR04_I2C_ADDR, 3);// Read data. Usually 3 bytes[1,4]
-  if (Wire.available() >= 3) {
-    byte highByte = Wire.read();   // High byte of distance data
-    byte midByte = Wire.read();    // Middle byte of distance data
-    byte lowByte = Wire.read();    // Low byte of distance data
-    // Combine the 3 bytes into a complete distance value (usually in millimeters)
-    uint32_t dist = ( ((uint32_t)highByte << 16) + ((uint32_t)midByte << 8) + lowByte ) /1000 /10.0;
-    return dist;
-  }
-  return 0;
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  long duration = pulseIn(ECHO_PIN, HIGH, 30000);
+  if (duration == 0) return 999;
+  return duration / 29 / 2;
 }
 
 /////////////////////OLED area///////////////////////////////////

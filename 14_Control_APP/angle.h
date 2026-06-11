@@ -1,18 +1,17 @@
-#ifndef __ANGLE_H__
+#ifndef __ANHLE_H__
 #define __ANGLE_H__
 
-#define ANGLE0 99
-#define ANGLE1 84
-#define ANGLE2 99
-#define ANGLE3 93
-#define ANGLE4 84
-#define ANGLE5 87
-#define ANGLE6 3
-#define ANGLE7 87
-#define ANGLE8 81
-#define ANGLE9 88
-#define ANGLE10 96
-#define ANGLE11 90
-#define ANGLE12 84
-
+int angle0 = 99;
+int angle1 = 84;
+int angle2 = 99;
+int angle3 = 93;
+int angle4 = 84;
+int angle5 = 87;
+int angle6 = 3;
+int angle7 = 87;
+int angle8 = 81;
+int angle9 = 88;
+int angle10 = 96;
+int angle11 = 90;
+int angle12 = 84;
 #endif

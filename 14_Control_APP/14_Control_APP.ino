@@ -1,338 +1,160 @@
-  /**********************************************************************
+/**********************************************************************
   Product     : Adeept Hexpod for Arduino
-  Auther      : www.adeept.com
-  Modification: 2025/10/20
+  Base        : WIFI_control (V5.0 official library)
+  Modified    : 2026/05/31 — WiFi Sabroza2, porta 4000, comandos app
 **********************************************************************/
-#include "Adeept_Hexpod_For_Arduino.h" 
-#include "mpu6050.h"
-#include "servo_move.h"
+#include "hexpod.h"
+#include <Adafruit_NeoPixel.h>
 
-#define Move_UP "forward"
-#define Move_Down "backward"
-#define Move_Left "left"
-#define Move_Right "right"
-#define Move_Stop "DTS"
-#define Head_Left "lookleft"
-#define Head_Right "lookright"
-#define Head_LRStop "LRStop"
-#define MOVE_FORWARD 1
-#define MOVE_BACKWARD 2
-#define TURN_LEFT 3
-#define TURN_RIGHT 4
-#define MOVE_STOP 0
-int move_flag = 0; //0 indicates stop, 1 indicates move forward, 2 indicates move backward, 3 indicates turning left, and 4 indicates turning right.
+#define LED_COUNT 6
+extern Adafruit_NeoPixel strip;
 
-int hand_Angle = ANGLE12;
-int stat_hand = 0; //0 indicates no rotation, 1 indicates turning left, and 2 indicates turning right.
-
-#define Auto_Matic 1
-#define Auto_Matic_ON "automatic"
-#define Auto_Matic_OFF "automaticOff"
-#define Keep_Distance 2
-#define Keep_Distance_ON "keepDistance"
-#define Keep_Distance_OFF "keepDistanceOff"
-#define Function_OFF 0
-int function_flag = Function_OFF;
-       
-#define BREATHING   0       // breathing light
-#define RAINBOW     1       // rainbow light
-#define RUNNING     2       // running light
-#define ALARM       3       // alarm light
-int ws2812Mode = -1; 
-int r = 0, g = 0, b = 0; 
-
-#define AVOID_DIST  40 // cm
-#define MIN_DIST  20 // cm
-float midDist;
-float leftDist;
-float rightDist;
-
-int stat_steady = 0;
-int buzzer_flag = 0; 
-float agx,agy,agz;
 String comdata = "";
+int judge = 0;
+// 0=parado, 1=frente, 2=trás, 3=direita, 4=esquerda, 5=equilíbrio, 8=desvio
+int ws2812Mode = -1;
+int ledR = 0, ledG = 0, ledB = 0;
 
+QUANRUPED q;
 
-void setup()
-{
-  Serial.begin(115200);       // set up a wifi serial communication baud rate 115200
-  
-  Serial.println("AT+CWMODE=3\r\n");//set to softAP+station mode
-  delay(3000);     //delay 3s
-  Serial.println("AT+CWJAP=\"Sabroza2\",\"1113152331A\"\r\n"); // <<< EDITE AQUI
-  delay(5000);     //delay 5s para conectar na rede
-  Serial.println("AT+CWSAP=\"Adeept_ADA033\",\"12345678\",8,2\r\n");   //TCP Protocol, server IP addr, port
-  delay(1000);     //delay 1s
-  Serial.println("AT+RST\r\n");     //reset wifi
-  delay(5000);     //delay 5s para ESP8266 rebotar e reconectar ao WiFi
-  Serial.println("AT+CIPMUX=1\r\n");//set to multi-connection mode
+void ESP8266_Setup() {
+  Serial.begin(115200);
+  Serial.println("AT+CWMODE=3\r\n");
+  delay(3000);
+  Serial.println("AT+CWJAP=\"Sabroza2\",\"1113152331A\"\r\n");
+  delay(5000);
+  Serial.println("AT+CWSAP=\"Adeept_ADA033\",\"12345678\",8,2\r\n");
   delay(1000);
-  Serial.println("AT+CIPSERVER=1,4000\r\n");//set as server
+  Serial.println("AT+RST\r\n");
+  delay(5000);
+  Serial.println("AT+CIPMUX=1\r\n");
   delay(1000);
-  Serial.println("AT+CIPSTO=7000\r\n");//keep the wifi connecting 7000 seconds
+  Serial.println("AT+CIPSERVER=1,4000\r\n");
   delay(1000);
-
-  Servo_Setup();               //Servo initialization
-  Mpu6050_Setup();              //Mpu6050 initialization
-
-  Buzzer_Setup();                //Buzzer initialization
-  Buzzer_Alert(2, 1);
-
-  WS2812_Setup();                //WS2812 LED initialization   
-  WS2812ColorAll(r,g,b);
-
-  Ultrasonic_Setup();            //Ultrasonic initialization
-
-  // OLED not present on this board
-
-  delay(100);
+  Serial.println("AT+CIPSTO=7000\r\n");
+  delay(1000);
 }
 
-void loop()
-{
-  while(Serial.available()>0)
-  {  
+void setup() {
+  strip.begin();
+  strip.setBrightness(50);
+  q.servo_attach();
+  ESP8266_Setup();
+  q.self_balanced_setup();
+  // verde = pronto
+  for (int i = 0; i < LED_COUNT; i++) strip.setPixelColor(i, strip.Color(0, 200, 0));
+  strip.show();
+}
+
+void loop() {
+  while (Serial.available() > 0) {
     comdata += char(Serial.read());
     delay(1);
   }
-  judgement();
-  control();
-  delay(1);
-  show_Battery_ratio();
-}
-
-
-void judgement()
-{
-  if (comdata.length() > 0){ 
-    //Serial.println(comdata);
-    // OLED_clear();
-    // OLED(1, 0, 0, comdata.c_str());
-    if(comdata.indexOf(Head_LRStop)>=0){
-      stat_hand = 0;
-    }
-    else if(comdata.indexOf(Head_Left)>=0){//head trun left
-      stat_hand = 1;
-    }
-    else if(comdata.indexOf(Head_Right)>=0){//head trun right
-      stat_hand = 2;
-    }
-
-    else if(comdata.indexOf(Move_Stop)>=0){//move stop
-      move_flag = MOVE_STOP;
-      moveStop();
-    }
-    else if(comdata.indexOf(Move_UP)>=0){//move forward
-      move_flag = MOVE_FORWARD;
-    }
-    else if(comdata.indexOf(Move_Down)>=0){//move backward
-      move_flag = MOVE_BACKWARD;
-    }
-    else if(comdata.indexOf(Move_Left)>=0){//trun left
-      move_flag = TURN_LEFT;
-    }
-    else if(comdata.indexOf(Move_Right)>=0){//trun right
-      move_flag = TURN_RIGHT;
-    }
-
-    else if(comdata.indexOf(Auto_Matic_OFF)>=0 || comdata.indexOf(Keep_Distance_OFF)>=0)
-    {
-      function_flag = Function_OFF;
-      moveStop();
-      // OLED not present
-    }
-    else if(comdata.indexOf(Auto_Matic_ON)>=0)
-    {
-      Buzzer_Silence();
-      hand_Angle =  ANGLE12;
-      function_flag = Auto_Matic;
-      // OLED not present
-    }
-    else if(comdata.indexOf(Keep_Distance_ON)>=0)
-    {
-      Buzzer_Silence();
-      hand_Angle =  ANGLE12;
-      function_flag = Keep_Distance;
-      // OLED not present
-    }
-
-    else if (comdata.indexOf("lightMode")>0)
-    {
-      String dataArrayString = comdata.substring(comdata.indexOf("["), comdata.indexOf("]"));
-      int firstComma = dataArrayString.indexOf(",");
-      int secondComma = dataArrayString.indexOf(",", firstComma + 1);
-      r = dataArrayString.substring(1, firstComma).toInt();
-      g = dataArrayString.substring(firstComma + 1, secondComma).toInt();
-      b = dataArrayString.substring(secondComma + 1).toInt();
-      if(comdata.indexOf("breath")>0){
-        ws2812Mode = BREATHING;
-      }
-      else if(comdata.indexOf("flowing")>0){
-        ws2812Mode = RUNNING;
-      }
-      else if(comdata.indexOf("rainbow")>0){
-        ws2812Mode = RAINBOW;
-      }
-      else if(comdata.indexOf("police")>0){
-        ws2812Mode = ALARM;
-      }
-    } 
-
-    else if(comdata.indexOf("Buzzer_Music_Off")>0){
-      buzzer_flag = 0;
-      Buzzer_Silence();
-    }
-    else if(comdata.indexOf("Buzzer_Music")>0){
-      buzzer_flag = 1;
-    }
-
-    else if(comdata.indexOf("steadyOff")>0){
-      stat_steady = 0;
-      restore();
-    }
-    else if(comdata.indexOf("steady")>0){
-      stat_steady = 1;
-    }
-
-    else if(comdata.indexOf("testdist")>=0){
-      uint32_t d = getDistance();
-      if(d == 0)        WS2812ColorAll(0, 0, 0);      // apagado = sem sensor
-      else if(d < 20)   WS2812ColorAll(255, 0, 0);    // vermelho = muito perto
-      else if(d < 40)   WS2812ColorAll(0, 255, 0);    // verde = em range
-      else              WS2812ColorAll(0, 0, 255);     // azul = longe
-    }
-
+  if (comdata.length() > 0) {
+    parse_command();
     comdata = "";
   }
+
+  switch (judge) {
+    case 1: q.moveforward();  break;
+    case 2: q.movebackward(); break;
+    case 3: q.turnright();    break;
+    case 4: q.turnleft();     break;
+    case 5: q.steaty();       break;
+    case 8: q.advoid();       break;
+  }
+
+  led_update();
 }
 
-void control()
-{
-  if(stat_hand && !function_flag) 
-  {
-    if(stat_hand == 1 && hand_Angle<180)
-      hand_Angle ++;
-    else if(stat_hand == 2  && hand_Angle>0)
-      hand_Angle --;
-    Servo_Angle(12, hand_Angle);
-    delay(10);
-  }
+void led_update() {
+  static unsigned long prev = 0;
+  static int brightness = 0, fade = 10;
+  static int hue = 0;
+  static int pos = 0, dir = 1;
+  static int state = 0;
+  unsigned long now = millis();
 
-  switch (move_flag) 
-  {    
-    case MOVE_FORWARD:
-      moveForward();
-      break;
-    case MOVE_BACKWARD:
-      moveBackward();
-      break;
-    case TURN_LEFT:
-      turnLeft();
-      break;
-    case TURN_RIGHT:
-      turnRight();
-      break;
-  }
-
-  switch (function_flag) 
-  {
-    case Auto_Matic:
-      Avoid_Obstacles();
-      break;
-    case Keep_Distance:
-      Ultrasonic_Follow();
-      break;
-  }
-
-  switch(ws2812Mode) 
-  {
-    case BREATHING:
-      breathingEffect(r, g, b);
-      break;
-    case RAINBOW:
-      rainbowEffect();
-      break;
-    case RUNNING:
-      runningLightEffect(r, g, b);
-      break;
-    case ALARM:
-      alarmEffect(r, g, b);
-      break;
-  }
-
-  if(buzzer_flag && !function_flag) 
-    Buzzer_PlaySong();
-
-  if(stat_steady && !move_flag && !function_flag) 
-  {
-    getOffsetAngle(agx,agy,agz);
-    selfBalanced(agx, agy, agz);
+  switch (ws2812Mode) {
+    case 0: // breath
+      if (now - prev >= 100) { prev = now;
+        brightness += fade;
+        if (brightness <= 0 || brightness >= 255) fade = -fade;
+        for (int i = 0; i < LED_COUNT; i++)
+          strip.setPixelColor(i, strip.Color(map(brightness,0,255,0,ledR), map(brightness,0,255,0,ledG), map(brightness,0,255,0,ledB)));
+        strip.show();
+      } break;
+    case 1: // rainbow
+      if (now - prev >= 100) { prev = now;
+        for (int i = 0; i < LED_COUNT; i++) {
+          int h = (hue + i * 32) % 256;
+          h = 255 - h;
+          uint32_t c = h < 85  ? strip.Color(255-h*3,0,h*3) :
+                       h < 170 ? strip.Color(0,(h-85)*3,255-(h-85)*3) :
+                                  strip.Color((h-170)*3,255-(h-170)*3,0);
+          strip.setPixelColor(i, c);
+        }
+        strip.show(); hue = (hue+1)%256;
+      } break;
+    case 2: // flowing
+      if (now - prev >= 300) { prev = now;
+        strip.clear();
+        strip.setPixelColor(pos, strip.Color(ledR,ledG,ledB));
+        int p1=pos-dir, p2=pos-2*dir;
+        if (p1>=0 && p1<LED_COUNT) strip.setPixelColor(p1, strip.Color(ledR/3,ledG/3,ledB/3));
+        if (p2>=0 && p2<LED_COUNT) strip.setPixelColor(p2, strip.Color(ledR/6,ledG/6,ledB/6));
+        strip.show();
+        pos += dir;
+        if (pos<=0 || pos>=LED_COUNT-1) dir=-dir;
+      } break;
+    case 3: // police
+      if (now - prev >= 300) { prev = now;
+        state = (state+1)%4; strip.clear();
+        for (int i = 0; i < LED_COUNT; i++)
+          if (state==0 || (state==1 && i%2==1) || (state==3 && i%2==0))
+            strip.setPixelColor(i, strip.Color(ledR,ledG,ledB));
+        strip.show();
+      } break;
   }
 }
 
-void Avoid_Obstacles()
-{
-  Servo_Angle(12, hand_Angle);
-  midDist = getDistance();
-
-  if (midDist > AVOID_DIST){
-    moveForward();
+void parse_command() {
+  // Parar (verificar antes dos comandos de movimento)
+  if (comdata.indexOf("DTS") >= 0 ||
+      comdata.indexOf("forwardStop") >= 0 ||
+      comdata.indexOf("backwardStop") >= 0 ||
+      comdata.indexOf("leftStop") >= 0 ||
+      comdata.indexOf("rightStop") >= 0 ||
+      comdata.indexOf("automaticOff") >= 0 ||
+      comdata.indexOf("keepDistanceOff") >= 0 ||
+      comdata.indexOf("steadyOff") >= 0) {
+    judge = 0;
+    q.servo_init();
+    q.strip_begin(0, 200, 0);
   }
-  else if (midDist <= MIN_DIST)
-  {
-    moveBackward();
-  }
-  else {
-    moveStop();
-
-    Servo_Angle(12, hand_Angle + 45); // left distance.
-    delay(300);
-    leftDist = getDistance();
-    Servo_Angle(12, hand_Angle - 45); // right distance.
-    delay(300);
-    rightDist = getDistance();
-    Servo_Angle(12, hand_Angle); // back to mid.
-
-    if (leftDist >= rightDist){
-      for(int i=0; i<2; i++)
-      {
-        turnLeft();
-      }
+  // Modos especiais (verificar antes dos movimentos simples)
+  else if (comdata.indexOf("automatic") >= 0)  { judge = 8; }
+  else if (comdata.indexOf("keepDistance") >= 0) { judge = 8; }  // usa desvio como proxy
+  else if (comdata.indexOf("steady") >= 0)     { judge = 5; }
+  // Movimento
+  else if (comdata.indexOf("forward") >= 0)    { judge = 1; }
+  else if (comdata.indexOf("backward") >= 0)   { judge = 2; }
+  else if (comdata.indexOf("lookright") >= 0 || comdata.indexOf("right") >= 0) { judge = 3; }
+  else if (comdata.indexOf("lookleft") >= 0  || comdata.indexOf("left") >= 0)  { judge = 4; }
+  // LEDs
+  else if (comdata.indexOf("lightMode") >= 0) {
+    int a = comdata.indexOf("["), b = comdata.indexOf("]");
+    if (a >= 0 && b > a) {
+      String rgb = comdata.substring(a+1, b);
+      int c1 = rgb.indexOf(","), c2 = rgb.indexOf(",", c1+1);
+      ledR = rgb.substring(0, c1).toInt();
+      ledG = rgb.substring(c1+1, c2).toInt();
+      ledB = rgb.substring(c2+1).toInt();
     }
-    else{ 
-      for(int i=0; i<2; i++)
-      {
-        turnRight();
-      }
-    }
-  }
-}
-
-void Ultrasonic_Follow()
-{
-  uint32_t distance = getDistance();
-  if (distance < 30){
-    moveBackward();
-  }
-  else if (distance > 40){
-    moveForward();
-  }
-  else {
-    moveStop();
-  }
-  delay(10);
-}
-
-int show_Battery_ratio()
-{
-  static unsigned long previousMillis = -60000;
-  char buffer[4];
-  unsigned long currentMillis = millis();
-  
-  if (currentMillis - previousMillis >= 60000) {
-    previousMillis = currentMillis;
-
-    sprintf(buffer, "%d%%", Get_Battery_ratio()); // 将整数转换为字符串
-    // OLED not present
+    if      (comdata.indexOf("breath")   >= 0) ws2812Mode = 0;
+    else if (comdata.indexOf("rainbow")  >= 0) ws2812Mode = 1;
+    else if (comdata.indexOf("flowing")  >= 0) ws2812Mode = 2;
+    else if (comdata.indexOf("police")   >= 0) ws2812Mode = 3;
   }
 }
