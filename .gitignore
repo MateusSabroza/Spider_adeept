@@ -1,0 +1,21 @@
+# Kit oficial e arquivos de instalação
+Hexapod 6 Legs Spider Robot Kit for Arduino V4/
+Hexapod 6 Legs Spider Robot Kit for Arduino V4.zip
+Versão correta/
+
+# Ambiente virtual Python
+.venv/
+
+# Configurações locais do Claude Code
+.claude/
+
+# Documentos de apresentação
+seminario/
+
+# Backup do firmware antigo
+14_Control_APP/_backup_old_firmware/
+
+# Arquivos do sistema
+.DS_Store
+__pycache__/
+*.pyc
